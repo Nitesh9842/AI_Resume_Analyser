@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI-powered resume analyzer and job fit scorer">
+    <title>AI Resume Analyzer & Job Fit Scorer</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <style>
+        * {
+            font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        .header-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-title {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .header-title i {
+            margin-right: 10px;
+        }
+        
+        .header-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        /* Main Container */
+        .main-container {
+            padding: 2rem 0;
+        }
+        
+        /* Section Titles */
+        .section-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #667eea;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .form-group label {
+            display: block;
+            color: white;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+        
+        .form-group label i {
+            margin-right: 8px;
+            color: #667eea;
+        }
+        
+        /* File Upload */
+        .file-upload-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 10;
+        }
+        
+        .file-upload-label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-height: 180px;
+            text-align: center;
+        }
+        
+        .file-upload-label:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e8ecf1 0%, #d4dae3 100%);
+        }
+        
+        .file-upload-label.dragging {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+        }
+        
+        .file-upload-label.file-selected {
+            border-color: #10b981;
+            border-style: solid;
+            background: linear-gradient(135deg, #10b98120 0%, #10b98140 100%);
+        }
+        
+        .file-upload-label i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 1rem;
+        }
+        
+        .file-upload-label .file-name {
+            color: #374151;
+            font-weight: 500;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .file-upload-label small {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        
+        /* Textarea */
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 180px;
+            background: rgba(255, 255, 255, 0.95);
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        textarea::placeholder {
+            color: #9ca3af;
+        }
+        
+        /* Status Messages */
+        .file-status, .jd-status {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            min-height: 1.5rem;
+        }
+        
+        .file-status.success, .jd-status.success {
+            color: #10b981;
+        }
+        
+        .file-status.error {
+            color: #ef4444;
+        }
+        
+        /* Submit Button */
+        .submit-wrapper {
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.5);
+        }
+        
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-spinner p {
+            color: white;
+            font-size: 1.1rem;
+        }
+        
+        /* Error Message */
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+        }
+        
+        /* Results Section */
+        .results-section {
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Score Section */
+        .score-section, .metrics-section, .skills-section, 
+        .strengths-section, .roles-section, .recommendations-section,
+        .details-section, .final-recommendations {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .score-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .score-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .score-card-main, .score-breakdown {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .score-card-main canvas, .score-breakdown canvas {
+            max-height: 220px;
+        }
+        
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+        }
+        
+        @media (max-width: 992px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .metrics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .metric-delta {
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        
+        .metric-delta.positive {
+            color: #10b981;
+        }
+        
+        .metric-delta.negative {
+            color: #ef4444;
+        }
+        
+        /* Skills Section */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .skills-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .skills-chart {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .skills-chart canvas {
+            max-height: 250px;
+        }
+        
+        .skills-details {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        
+        .skill-group {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .skill-group h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .skill-group h3 .fa-check-circle {
+            color: #10b981;
+        }
+        
+        .skill-group h3 .fa-times-circle {
+            color: #ef4444;
+        }
+        
+        /* Skill Tags */
+        .skill-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .skill-tag {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .skill-tag.matched {
+            background: linear-gradient(135deg, #10b98130 0%, #10b98150 100%);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+        
+        .skill-tag.missing {
+            background: linear-gradient(135deg, #ef444430 0%, #ef444450 100%);
+            color: #fca5a5;
+            border: 1px solid #ef4444;
+        }
+        
+        .skill-tag.strength {
+            background: linear-gradient(135deg, #f59e0b30 0%, #f59e0b50 100%);
+            color: #fbbf24;
+            border: 1px solid #f59e0b;
+        }
+        
+        .skill-tag.suggestion {
+            background: linear-gradient(135deg, #667eea30 0%, #667eea50 100%);
+            color: #a5b4fc;
+            border: 1px solid #667eea;
+        }
+        
+        /* Roles Grid */
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        
+        @media (max-width: 992px) {
+            .roles-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .roles-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .role-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 1rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .role-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .role-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        /* Recommendation Card */
+        .recommendation-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .recommendation-card p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0 0 1rem 0;
+        }
+        
+        /* Details Grid */
+        .details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .detail-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .detail-card h3 {
+            color: white;
+            font-size: 1.1rem;
+            margin: 0 0 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .detail-card h3 i {
+            color: #667eea;
+        }
+        
+        .detail-card p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0.5rem 0;
+            font-size: 0.95rem;
+        }
+        
+        .detail-card strong {
+            color: white;
+        }
+        
+        /* Final Recommendation Box */
+        .recommendation-box {
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .recommendation-box.excellent {
+            background: linear-gradient(135deg, #10b98120 0%, #10b98140 100%);
+            border: 2px solid #10b981;
+        }
+        
+        .recommendation-box.good {
+            background: linear-gradient(135deg, #f59e0b20 0%, #f59e0b40 100%);
+            border: 2px solid #f59e0b;
+        }
+        
+        .recommendation-box.needs-work {
+            background: linear-gradient(135deg, #ef444420 0%, #ef444440 100%);
+            border: 2px solid #ef4444;
+        }
+        
+        .recommendation-box h3 {
+            color: white;
+            font-size: 1.3rem;
+            margin: 0 0 0.75rem 0;
+        }
+        
+        .recommendation-box p {
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .recommendation-box .skill-gap-analysis {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+        
+        /* Footer */
+        .footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2rem 0;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .footer p {
+            color: rgba(255, 255, 255, 0.8);
+            margin: 0.5rem 0;
+        }
+        
+        .footer .disclaimer {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+        
+        /* No data message */
+        .no-data {
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header-container">
+        <div class="container">
+            <h1 class="header-title">
+                <i class="fas fa-file-alt"></i>
+                AI Resume Analyzer & Job Fit Scorer
+            </h1>
+            <p class="header-subtitle">
+                Intelligent resume analysis powered by AI | Get instant insights on your job match score
+            </p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        <div class="container">
+            
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <h2 class="section-title">
+                    <i class="fas fa-upload"></i>
+                    Upload Your Resume & Job Description
+                </h2>
+                
+                <form id="analyzeForm" class="upload-form" enctype="multipart/form-data">
+                    <div class="form-row">
+                        <!-- Resume Upload -->
+                        <div class="form-group">
+                            <label for="resumeFile">
+                                <i class="fas fa-file-pdf"></i>
+                                Upload Resume
+                            </label>
+                            <div class="file-upload-wrapper" id="fileUploadWrapper">
+                                <input type="file" id="resumeFile" name="resume" accept=".pdf,.docx,.doc,.txt" required>
+                                <div class="file-upload-label" id="fileUploadLabel">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span class="file-name">Choose file or drag here</span>
+                                    <small>Supported formats: PDF, DOCX, DOC, TXT (Max 5MB)</small>
+                                </div>
+                            </div>
+                            <div id="fileStatus" class="file-status"></div>
+                        </div>
+
+                        <!-- Job Description -->
+                        <div class="form-group">
+                            <label for="jobDescription">
+                                <i class="fas fa-briefcase"></i>
+                                Enter Job Description
+                            </label>
+                            <textarea 
+                                id="jobDescription" 
+                                name="job_description" 
+                                rows="10" 
+                                placeholder="Paste the complete job description including required skills, qualifications, and responsibilities..."
+                                required
+                            ></textarea>
+                            <div id="jdStatus" class="jd-status"></div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="submit-wrapper">
+                        <button type="submit" class="btn-submit" id="analyzeBtn">
+                            <i class="fas fa-rocket"></i>
+                            Analyze Resume
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing your resume... This may take a few seconds...</p>
+            </div>
+
+            <!-- Error Message -->
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+            <!-- Results Section -->
+            <section id="resultsSection" class="results-section" style="display: none;">
+                
+                <!-- Match Score -->
+                <div class="score-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-bullseye"></i>
+                        Job Match Score
+                    </h2>
+                    <div class="score-grid">
+                        <div class="score-card-main">
+                            <canvas id="gaugeChart"></canvas>
+                        </div>
+                        <div class="score-breakdown">
+                            <canvas id="breakdownChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="metrics-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-chart-line"></i>
+                        Key Metrics
+                    </h2>
+                    <div class="metrics-grid" id="metricsGrid">
+                        <!-- Metrics will be dynamically inserted here -->
+                    </div>
+                </div>
+
+                <!-- Skills Analysis -->
+                <div class="skills-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-search"></i>
+                        Skills Analysis
+                    </h2>
+                    <div class="skills-grid">
+                        <div class="skills-chart">
+                            <canvas id="skillsChart"></canvas>
+                        </div>
+                        <div class="skills-details">
+                            <div class="skill-group">
+                                <h3><i class="fas fa-check-circle"></i> Matched Skills</h3>
+                                <div id="matchedSkills" class="skill-tags"></div>
+                            </div>
+                            <div class="skill-group">
+                                <h3><i class="fas fa-times-circle"></i> Missing Skills</h3>
+                                <div id="missingSkills" class="skill-tags"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strengths -->
+                <div class="strengths-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-star"></i>
+                        Your Strengths
+                    </h2>
+                    <div id="strengthsContainer" class="skill-tags"></div>
+                </div>
+
+                <!-- Job Role Predictions -->
+                <div class="roles-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-briefcase"></i>
+                        Recommended Job Roles
+                    </h2>
+                    <div id="rolesContainer" class="roles-grid"></div>
+                </div>
+
+                <!-- Skill Recommendations -->
+                <div class="recommendations-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-book"></i>
+                        Skills to Learn
+                    </h2>
+                    <div class="recommendation-card">
+                        <p>Based on your current skills and the job requirements, consider learning these skills:</p>
+                        <div id="skillSuggestions" class="skill-tags"></div>
+                    </div>
+                </div>
+
+                <!-- Detailed Information -->
+                <div class="details-section">
+                    <h2 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        Detailed Information
+                    </h2>
+                    <div class="details-grid">
+                        <div class="detail-card">
+                            <h3><i class="fas fa-file-alt"></i> Resume Information</h3>
+                            <div id="resumeDetails"></div>
+                        </div>
+                        <div class="detail-card">
+                            <h3><i class="fas fa-briefcase"></i> Job Description Analysis</h3>
+                            <div id="jdDetails"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recommendations -->
+                <div class="final-recommendations">
+                    <h2 class="section-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Personalized Recommendations
+                    </h2>
+                    <div id="finalRecommendation" class="recommendation-box"></div>
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p><strong>Made with ❤️ by Nitesh – AI Engineer</strong></p>
+            <p>Powered by AI • Sentence Transformers • Flask</p>
+            <p class="disclaimer">
+                This tool provides AI-powered analysis to help you understand job compatibility. Results are for guidance only.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // Global variables
+        let charts = {};
+
+        // DOM Elements
+        const analyzeForm = document.getElementById('analyzeForm');
+        const resumeFileInput = document.getElementById('resumeFile');
+        const jobDescription = document.getElementById('jobDescription');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const errorMessage = document.getElementById('errorMessage');
+        const resultsSection = document.getElementById('resultsSection');
+        const fileStatus = document.getElementById('fileStatus');
+        const jdStatus = document.getElementById('jdStatus');
+        const fileUploadLabel = document.getElementById('fileUploadLabel');
+        const fileUploadWrapper = document.getElementById('fileUploadWrapper');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        // File upload handling
+        resumeFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const fileNameDisplay = fileUploadLabel.querySelector('.file-name');
+            
+            if (file) {
+                // Validate file type
+                const allowedExtensions = ['pdf', 'doc', 'docx', 'txt'];
+                const fileExtension = file.name.split('.').pop().toLowerCase();
+                
+                if (!allowedExtensions.includes(fileExtension)) {
+                    showError('Please upload a PDF, DOC, DOCX, or TXT file');
+                    resumeFileInput.value = '';
+                    fileNameDisplay.textContent = 'Choose file or drag here';
+                    fileUploadLabel.classList.remove('file-selected');
+                    fileStatus.innerHTML = '';
+                    return;
+                }
+                
+                // Validate file size (5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showError('File size must be less than 5MB');
+                    resumeFileInput.value = '';
+                    fileNameDisplay.textContent = 'Choose file or drag here';
+                    fileUploadLabel.classList.remove('file-selected');
+                    fileStatus.innerHTML = '';
+                    return;
+                }
+                
+                // Update file name display
+                fileNameDisplay.textContent = file.name;
+                fileUploadLabel.classList.add('file-selected');
+                fileStatus.innerHTML = `<span class="success"><i class="fas fa-check-circle"></i> ${file.name} selected (${(file.size / 1024).toFixed(1)} KB)</span>`;
+                fileStatus.className = 'file-status success';
+            } else {
+                fileNameDisplay.textContent = 'Choose file or drag here';
+                fileUploadLabel.classList.remove('file-selected');
+                fileStatus.innerHTML = '';
+            }
+        });
+
+        // Job description input handling
+        jobDescription.addEventListener('input', (e) => {
+            const length = e.target.value.length;
+            
+            if (length > 50) {
+                jdStatus.innerHTML = `<i class="fas fa-check-circle"></i> JD received (${length} characters)`;
+                jdStatus.className = 'jd-status success';
+            } else {
+                jdStatus.innerHTML = `<span style="color: #fbbf24;">${50 - length} more characters needed</span>`;
+                jdStatus.className = 'jd-status';
+            }
+        });
+
+        // Drag and drop handling
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUploadWrapper.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUploadWrapper.addEventListener(eventName, () => {
+                fileUploadLabel.classList.add('dragging');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUploadWrapper.addEventListener(eventName, () => {
+                fileUploadLabel.classList.remove('dragging');
+            }, false);
+        });
+
+        fileUploadWrapper.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                // Create a new DataTransfer to set files
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(files[0]);
+                resumeFileInput.files = dataTransfer.files;
+                
+                // Trigger change event
+                const event = new Event('change', { bubbles: true });
+                resumeFileInput.dispatchEvent(event);
+            }
+        }, false);
+
+        // Form submission
+        analyzeForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Validate inputs
+            if (!resumeFileInput.files[0]) {
+                showError('Please upload a resume file');
+                return;
+            }
+            
+            if (jobDescription.value.length < 50) {
+                showError('Job description must be at least 50 characters');
+                return;
+            }
+            
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('resume', resumeFileInput.files[0]);
+            formData.append('job_description', jobDescription.value);
+            
+            // Show loading, hide error and results
+            showLoading();
+            hideError();
+            hideResults();
+            analyzeBtn.disabled = true;
+            
+            try {
+                // Send request to Flask backend
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'An error occurred while analyzing the resume');
+                }
+                
+                // Display results
+                displayResults(data);
+                
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                hideLoading();
+                analyzeBtn.disabled = false;
+            }
+        });
+
+        // Display functions
+        function showLoading() {
+            loadingSpinner.style.display = 'block';
+        }
+
+        function hideLoading() {
+            loadingSpinner.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.innerHTML = `<i class="fas fa-exclamation-circle"></i> ${message}`;
+            errorMessage.style.display = 'block';
+            setTimeout(() => hideError(), 5000);
+        }
+
+        function hideError() {
+            errorMessage.style.display = 'none';
+        }
+
+        function hideResults() {
+            resultsSection.style.display = 'none';
+        }
+
+        function showResults() {
+            resultsSection.style.display = 'block';
+            // Smooth scroll to results
+            setTimeout(() => {
+                resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // Display results
+        function displayResults(data) {
+            // Show results section
+            showResults();
+            
+            // Display charts
+            createGaugeChart(data.scores.overall_score);
+            createBreakdownChart(data.scores);
+            createSkillsChart(data.skills.matched_skills.length, data.skills.missing_skills.length);
+            
+            // Display metrics
+            displayMetrics(data.scores, data.skills);
+            
+            // Display skills
+            displaySkills(data.skills);
+            
+            // Display strengths
+            displayStrengths(data.skills.strengths || []);
+            
+            // Display job roles
+            displayJobRoles(data.predicted_roles || []);
+            
+            // Display skill suggestions
+            displaySkillSuggestions(data.skills.suggestions || []);
+            
+            // Display detailed information
+            displayDetails(data.resume_data || {}, data.jd_data || {});
+            
+            // Display recommendation
+            displayRecommendation(data.recommendation || {}, data.skills.missing_skills.length);
+        }
+
+        // Create gauge chart for overall score
+        function createGaugeChart(score) {
+            const ctx = document.getElementById('gaugeChart').getContext('2d');
+            
+            // Destroy existing chart
+            if (charts.gauge) charts.gauge.destroy();
+            
+            const color = score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444';
+            
+            charts.gauge = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [score, 100 - score],
+                        backgroundColor: [color, '#e5e7eb'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    circumference: 180,
+                    rotation: 270,
+                    cutout: '75%',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                },
+                plugins: [{
+                    id: 'gaugeText',
+                    afterDraw: (chart) => {
+                        const { ctx, chartArea: { top, width, height } } = chart;
+                        ctx.save();
+                        ctx.font = 'bold 2.5em Poppins';
+                        ctx.textAlign = 'center';
+                        ctx.fillStyle = color;
+                        ctx.fillText(`${score}%`, width / 2, top + height / 1.2);
+                        ctx.font = '1em Poppins';
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText('Match Score', width / 2, top + height / 1.2 + 30);
+                        ctx.restore();
+                    }
+                }]
+            });
+        }
+
+        // Create breakdown chart
+        function createBreakdownChart(scores) {
+            const ctx = document.getElementById('breakdownChart').getContext('2d');
+            
+            if (charts.breakdown) charts.breakdown.destroy();
+            
+            charts.breakdown = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Semantic Similarity', 'Skill Match'],
+                    datasets: [{
+                        label: 'Score (%)',
+                        data: [scores.semantic_similarity || 0, scores.skill_match || 0],
+                        backgroundColor: ['#667eea', '#764ba2'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Create skills pie chart
+        function createSkillsChart(matched, missing) {
+            const ctx = document.getElementById('skillsChart').getContext('2d');
+            
+            if (charts.skills) charts.skills.destroy();
+            
+            charts.skills = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Matched Skills', 'Missing Skills'],
+                    datasets: [{
+                        data: [matched, missing],
+                        backgroundColor: ['#10b981', '#ef4444'],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Display metrics
+        function displayMetrics(scores, skills) {
+            const metricsGrid = document.getElementById('metricsGrid');
+            const matchRate = scores.match_rate || 0;
+            
+            metricsGrid.innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-label">Overall Match</div>
+                    <div class="metric-value">${scores.overall_score || 0}%</div>
+                    <div class="metric-delta ${scores.overall_score >= 70 ? 'positive' : 'negative'}">
+                        ${scores.overall_score >= 70 ? '↑' : '↓'} ${((scores.overall_score || 0) - 70).toFixed(1)}% vs target
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Skills Found</div>
+                    <div class="metric-value">${skills.resume_skills?.length || 0}</div>
+                    <div class="metric-delta positive">
+                        ✓ ${skills.matched_skills?.length || 0} matched
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Missing Skills</div>
+                    <div class="metric-value">${skills.missing_skills?.length || 0}</div>
+                    <div class="metric-delta ${skills.missing_skills?.length === 0 ? 'positive' : 'negative'}">
+                        ${skills.missing_skills?.length === 0 ? '✓ All covered' : '⚠ Need to learn'}
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Skill Match Rate</div>
+                    <div class="metric-value">${matchRate.toFixed(1)}%</div>
+                    <div class="metric-delta ${matchRate >= 60 ? 'positive' : 'negative'}">
+                        ${matchRate >= 60 ? '↑' : '↓'} ${(matchRate - 60).toFixed(1)}% vs average
+                    </div>
+                </div>
+            `;
+        }
+
+        // Display skills
+        function displaySkills(skills) {
+            const matchedSkills = document.getElementById('matchedSkills');
+            const missingSkills = document.getElementById('missingSkills');
+            
+            if (skills.matched_skills && skills.matched_skills.length > 0) {
+                matchedSkills.innerHTML = skills.matched_skills.map(skill => 
+                    `<span class="skill-tag matched">${skill}</span>`
+                ).join('');
+            } else {
+                matchedSkills.innerHTML = '<p class="no-data">No direct skill matches found</p>';
+            }
+            
+            if (skills.missing_skills && skills.missing_skills.length > 0) {
+                missingSkills.innerHTML = skills.missing_skills.map(skill => 
+                    `<span class="skill-tag missing">${skill}</span>`
+                ).join('');
+            } else {
+                missingSkills.innerHTML = '<p style="color: #10b981;">No missing skills! 🎉</p>';
+            }
+        }
+
+        // Display strengths
+        function displayStrengths(strengths) {
+            const container = document.getElementById('strengthsContainer');
+            
+            if (strengths && strengths.length > 0) {
+                container.innerHTML = strengths.map(skill => 
+                    `<span class="skill-tag strength">${skill}</span>`
+                ).join('');
+            } else {
+                container.innerHTML = '<p class="no-data">Build your skills to showcase your strengths!</p>';
+            }
+        }
+
+        // Display job roles
+        function displayJobRoles(roles) {
+            const container = document.getElementById('rolesContainer');
+            
+            if (roles && roles.length > 0) {
+                container.innerHTML = roles.map(role => `
+                    <div class="role-card">
+                        <div class="role-icon">🎯</div>
+                        <div class="role-title">${role}</div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p class="no-data">No role predictions available</p>';
+            }
+        }
+
+        // Display skill suggestions
+        function displaySkillSuggestions(suggestions) {
+            const container = document.getElementById('skillSuggestions');
+            
+            if (suggestions && suggestions.length > 0) {
+                container.innerHTML = suggestions.map(skill => 
+                    `<span class="skill-tag suggestion">${skill}</span>`
+                ).join('');
+            } else {
+                container.innerHTML = '<p class="no-data">No suggestions at this time</p>';
+            }
+        }
+
+        // Display detailed information
+        function displayDetails(resumeData, jdData) {
+            const resumeDetails = document.getElementById('resumeDetails');
+            const jdDetails = document.getElementById('jdDetails');
+            
+            if (resumeData && Object.keys(resumeData).length > 0) {
+                resumeDetails.innerHTML = `
+                    <p><strong>Name:</strong> ${resumeData.name || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${resumeData.email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${resumeData.phone || 'N/A'}</p>
+                    <p><strong>Experience:</strong> ${resumeData.experience || 'N/A'} years</p>
+                    <p><strong>Education:</strong> ${resumeData.education ? resumeData.education.join(', ') : 'N/A'}</p>
+                `;
+            } else {
+                resumeDetails.innerHTML = '<p class="no-data">Resume details not available</p>';
+            }
+            
+            if (jdData && Object.keys(jdData).length > 0) {
+                jdDetails.innerHTML = `
+                    <p><strong>Job Title:</strong> ${jdData.job_title || 'N/A'}</p>
+                    <p><strong>Seniority Level:</strong> ${jdData.seniority_level || 'N/A'}</p>
+                    <p><strong>Experience Required:</strong> ${jdData.experience_required || 'N/A'}</p>
+                    <p><strong>Skills Required:</strong> ${jdData.skills_count || 'N/A'} skills</p>
+                `;
+            } else {
+                jdDetails.innerHTML = '<p class="no-data">Job description details not available</p>';
+            }
+        }
+
+        // Display final recommendation
+        function displayRecommendation(recommendation, missingSkillsCount) {
+            const container = document.getElementById('finalRecommendation');
+            
+            const level = recommendation.level || 'needs-work';
+            const message = recommendation.message || 'Analysis Complete';
+            const advice = recommendation.advice || 'Review the results above to improve your resume.';
+            
+            let icon = '⚠️';
+            if (level === 'excellent') icon = '🎉';
+            else if (level === 'good') icon = '👍';
+            
+            let additionalAdvice = '';
+            if (missingSkillsCount > 0) {
+                additionalAdvice = `
+                    <div class="skill-gap-analysis">
+                        <p><strong>📚 Skill Gap Analysis:</strong></p>
+                        <p>You're missing ${missingSkillsCount} key skills required for this role. 
+                        Consider online courses, certifications, or hands-on projects to build these skills.</p>
+                    </div>
+                `;
+            }
+            
+            container.className = `recommendation-box ${level}`;
+            container.innerHTML = `
+                <h3>${icon} ${message}</h3>
+                <p>${advice}</p>
+                ${additionalAdvice}
+            `;
+        }
+    </script>
+</body>
+</html>

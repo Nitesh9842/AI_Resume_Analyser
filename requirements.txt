@@ -22,7 +22,7 @@ groq
 
 # Data Processing
 numpy>=1.21.0
-
+gunicorn
 # Visualization
 plotly>=5.14.0
 matplotlib>=3.5.0

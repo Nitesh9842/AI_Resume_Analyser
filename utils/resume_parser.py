@@ -17,7 +17,7 @@ class ResumeParser:
         result = parser.parse_resume(resume_text)
     """
     
-    def __init__(self, api_key: Optional[str] = "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", model: str = "llama-3.1-8b-instant"):
+    def __init__(self, api_key: Optional[str] = "api key past", model: str = "llama-3.1-8b-instant"):
         """
         Initialize parser with Groq API
         
